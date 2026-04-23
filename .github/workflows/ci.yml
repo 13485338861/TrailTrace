@@ -38,7 +38,9 @@ jobs:
       - name: Build Android APK
         if: runner.os == 'Linux'
         run: |
-          npx cap add android --no-interactive 2>/dev/null || true
+          if [ ! -d "android" ]; then
+            npx cap add android --no-interactive
+          fi
           npx cap sync android
           cd android
           chmod +x gradlew
