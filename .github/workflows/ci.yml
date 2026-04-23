@@ -47,12 +47,9 @@ jobs:
       - name: Build Android APK
         if: runner.os == 'Linux'
         run: |
-          if [ ! -d "android" ]; then
-            yes | npx cap add android
-          fi
+          rm -rf android
+          yes | npx cap add android
           npx cap sync android
-          ls -la android/ | head -20
-          ls -la android/gradle/wrapper/ 2>&1 || echo 'wrapper dir missing'
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug
