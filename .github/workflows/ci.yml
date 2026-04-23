@@ -26,6 +26,9 @@ jobs:
       - name: Install Capacitor CLI
         run: npm install -g @capacitor/cli
 
+      - name: Install Capacitor Android platform
+        run: npm install @capacitor/android
+
       - name: TypeScript check
         run: npx tsc --noEmit
 
