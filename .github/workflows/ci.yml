@@ -49,9 +49,21 @@ jobs:
         run: |
           rm -rf android
           yes | npx cap add android
-          # Fix kotlin-stdlib duplicate class error (deleted by cap add)
-          sed -i '/^allprojects {/i \
-configurations.all {\n    exclude group: '"'"'org.jetbrains.kotlin'"'"', module: '"'"'kotlin-stdlib-jdk7'"'"'\n    exclude group: '"'"'org.jetbrains.kotlin'"'"', module: '"'"'kotlin-stdlib-jdk8'"'"'\n}\n' android/build.gradle
+          # Fix kotlin-stdlib duplicate class error after cap add overwrites build.gradle
+          python -c "
+import re
+with open('android/build.gradle', 'r') as f:
+    content = f.read()
+patch = '''
+configurations.all {
+    exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk7'
+    exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk8'
+}
+'''
+content = re.sub(r'(apply from: .*variables.gradle.*\n)', r'\1' + patch, content)
+with open('android/build.gradle', 'w') as f:
+    f.write(content)
+"
           npx cap sync android
           cd android
           chmod +x gradlew
