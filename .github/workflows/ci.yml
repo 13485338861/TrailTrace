@@ -51,6 +51,8 @@ jobs:
             yes | npx cap add android
           fi
           npx cap sync android
+          ls -la android/ | head -20
+          ls -la android/gradle/wrapper/ 2>&1 || echo 'wrapper dir missing'
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug
