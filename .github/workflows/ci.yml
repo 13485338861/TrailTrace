@@ -52,6 +52,10 @@ jobs:
           fi
           npx cap sync android
           cd android
+          if [ ! -f "gradlew" ]; then
+            rm -rf android
+            yes | npx cap add android
+          fi
           chmod +x gradlew
           ./gradlew assembleDebug
 
