@@ -1,1 +1,12 @@
-LyoqIEB0eXBlIHtpbXBvcnQoJ2plc3QnKS5Db25maWd9ICovCmNvbnN0IGNvbmZpZyA9IHsKICBwcmVzZXQ6ICd0cy1qZXN0JywKICB0ZXN0RW52aXJvbm1lbnQ6ICdqc2RvbScsCiAgdHJhbnNmb3JtOiB7CiAgICAnXi4rXFwudHN4PyQnOiBbJ3RzLWplc3QnLCB7IHRzY29uZmlnOiAndHNjb25maWcudGVzdC5qc29uJyB9XSwKICB9LAogIHRlc3RNYXRjaDogWyd0ZXN0cy8qKi8qLnRzJywgJyoqLyoudGVzdC50cyddLAogIGNvbGxlY3RDb3ZlcmFnZUZyb206IFsnc3JjLyoqLyoudHMnLCAnIXNyYy8qKi8qLmQudHMnXSwKfTsKCmV4cG9ydCBkZWZhdWx0IGNvbmZpZzs=
+/** @type {import("jest").Config} */
+const config = {
+  preset: "ts-jest",
+  testEnvironment: "jsdom",
+  transform: {
+    "^.+\\.tsx?$": ["ts-jest", { tsconfig: "tsconfig.test.json" }],
+  },
+  testMatch: ["tests/**/*.ts", "**/*.test.ts"],
+  collectCoverageFrom: ["src/**/*.ts", "!src/**/*.d.ts"],
+};
+
+export default config;

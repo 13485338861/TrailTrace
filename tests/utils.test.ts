@@ -1,1 +1,130 @@
-aW1wb3J0IHsgaGF2ZXJzaW5lS20sIGNhbGNEaXN0YW5jZSwgY2FsY1NwZWVkLCBjYWxjRWxldmF0aW9uR2FpbiwgZ2VuSWQsIGZvcm1hdER1cmF0aW9uLCBmb3JtYXREaXN0YW5jZSwgZm9ybWF0U3BlZWQsIGZvcm1hdEFsdCB9IGZyb20gJy4uL3NyYy91dGlscyc7CgpkZXNjcmliZSgnaGF2ZXJzaW5lS20nLCAoKSA9PiB7CiAgaXQoJ+eSge+8hOeVu+e7m+Wki+aZpemNp+aEreeIo+eSuua/iO6ehycsICgpID0+IHsKICAgIC8vIOmNluakvuWQq+mNkuadv+OBieWosuODp+WuszEwM2ttCiAgICBjb25zdCBkID0gaGF2ZXJzaW5lS20oMzkuOTA0MiwgMTE2LjQwNzQsIDM5LjM0MzQsIDExNy4zNjE2KTsKICAgIGV4cGVjdChkKS50b0JlR3JlYXRlclRoYW4oMTAwKTsKICAgIGV4cGVjdChkKS50b0JlTGVzc1RoYW4oMTEwKTsKICB9KTsKCiAgaXQoJ+mNmuWxvOertOmQkOehhee5kemNpT8nLCAoKSA9PiB7CiAgICBleHBlY3QoaGF2ZXJzaW5lS20oMzkuOSwgMTE2LjQsIDM5LjksIDExNi40KSkudG9CZSgwKTsKICB9KTsKfSk7CgpkZXNjcmliZSgnY2FsY0Rpc3RhbmNlJywgKCkgPT4gewogIGl0KCfnu4zng5jmmp/nvIHli67nuZHpjaU/JywgKCkgPT4gewogICAgZXhwZWN0KGNhbGNEaXN0YW5jZShbXSkpLnRvQmUoMCk7CiAgfSk7CgogIGl0KCfpjZfmm6DlgaPmnanmlr/mtJYwJywgKCkgPT4gewogICAgZXhwZWN0KGNhbGNEaXN0YW5jZShbeyBsYXQ6IDM5LjksIGxuZzogMTE2LjQsIHRpbWU6IDAgfV0pKS50b0JlKDApOwogIH0pOwoKICBpdCgn5raT44KH5YGj55KB77yE55W75aed772H4oCYJywgKCkgPT4gewogICAgY29uc3QgcHRzID0gWwogICAgICB7IGxhdDogMzkuOTA0MiwgbG5nOiAxMTYuNDA3NCwgdGltZTogMCB9LAogICAgICB7IGxhdDogMzkuMzQzNCwgbG5nOiAxMTcuMzYxNiwgdGltZTogMCB9LAogICAgXTsKICAgIGNvbnN0IGQgPSBjYWxjRGlzdGFuY2UocHRzKTsKICAgIGV4cGVjdChkKS50b0JlR3JlYXRlclRoYW4oMTAwKTsKICAgIGV4cGVjdChkKS50b0JlTGVzc1RoYW4oMTEwKTsKICB9KTsKfSk7CgpkZXNjcmliZSgnY2FsY1NwZWVkJywgKCkgPT4gewogIGl0KCfpj4PnirPmpILpl4Lnv6Dkv4rpjq3uiJ3nuZHpjaU/JywgKCkgPT4gewogICAgY29uc3QgcDEgPSB7IGxhdDogMzkuOSwgbG5nOiAxMTYuNCB9OwogICAgY29uc3QgcDIgPSB7IGxhdDogMzkuOSwgbG5nOiAxMTYuNCB9OwogICAgZXhwZWN0KGNhbGNTcGVlZChwMSBhcyBhbnksIHAyIGFzIGFueSkpLnRvQmUoMCk7CiAgfSk7CgogIGl0KCflp53vvYXniLbnkoHvvITnlbsnLCAoKSA9PiB7CiAgICBjb25zdCBwMSA9IHsgbGF0OiAzOS45MDQyLCBsbmc6IDExNi40MDc0LCB0aW1lOiAxMDAwMDAwMDAwMDAwIH07CiAgICBjb25zdCBwMiA9IHsgbGF0OiAzOS4zNDM0LCBsbmc6IDExNy4zNjE2LCB0aW1lOiAxMDAwMDAzNjAwMDAwIH07IC8vIOe7vj8wM2ttLzFoCiAgICBjb25zdCBzID0gY2FsY1NwZWVkKHAxLCBwMik7CiAgICBleHBlY3QocykudG9CZUdyZWF0ZXJUaGFuKDEwMCk7CiAgICBleHBlY3QocykudG9CZUxlc3NUaGFuKDExMCk7CiAgfSk7Cn0pOwoKZGVzY3JpYmUoJ2NhbGNFbGV2YXRpb25HYWluJywgKCkgPT4gewogIGl0KCfnu4zng5jmmp/nvIHli67nuZHpjaU/JywgKCkgPT4gewogICAgZXhwZWN0KGNhbGNFbGV2YXRpb25HYWluKFtdKSkudG9CZSgwKTsKICB9KTsKCiAgaXQoJ+e7vu6ImeesgumNl+WbqeeWrumNlOeKs+6EnOe6rT8sICgpID0+IHsKICAgIGNvbnN0IHB0cyA9IFsKICAgICAgeyBsYXQ6IDM5LjksIGxuZzogMTE2LjQsIGFsdDogMTAwLCB0aW1lOiAwIH0sCiAgICAgIHsgbGF0OiAzOS45LCBsbmc6IDExNi41LCBhbHQ6IDIwMCwgdGltZTogMCB9LAogICAgICB7IGxhdDogMzkuOSwgbG5nOiAxMTYuNiwgYWx0OiAzMDAsIHRpbWU6IDAgfSwKICAgIF07CiAgICBleHBlY3QoY2FsY0VsZXZhdGlvbkdhaW4ocHRzKSkudG9CZSgyMDApOwogIH0pOwoKICBpdCgn5raT5amC5bSMK+a2k+Wsruaqt+mNme6BhueWrumNlOeKseesgumNl+WbrOWEtOmNkj8sICgpID0+IHsKICAgIGNvbnN0IHB0cyA9IFsKICAgICAgeyBsYXQ6IDM5LjksIGxuZzogMTE2LjQsIGFsdDogMTAwLCB0aW1lOiAwIH0sCiAgICAgIHsgbGF0OiAzOS45LCBsbmc6IDExNi41LCBhbHQ6IDMwMCwgdGltZTogMCB9LAogICAgICB7IGxhdDogMzkuOSwgbG5nOiAxMTYuNiwgYWx0OiAxNTAsIHRpbWU6IDAgfSwKICAgIF07CiAgICBleHBlY3QoY2FsY0VsZXZhdGlvbkdhaW4ocHRzKSkudG9CZSgyMDApOyAvLyAxMDDpiKs/MDDmtpPlqYLltIwyMDDplJs/MDDpiKs/NTDmtpPlrK7mqrfmtpPltojuhbjpjY8/ICB9KTsKfSk7CgpkZXNjcmliZSgnZ2VuSWQnLCAoKSA9PiB7CiAgaXQoJ+mQoueGuOWemumNnu6ImeertElEJywgKCkgPT4gewogICAgY29uc3QgaWQxID0gZ2VuSWQoKTsKICAgIGNvbnN0IGlkMiA9IGdlbklkKCk7CiAgICBleHBlY3QoaWQxKS5ub3QudG9CZShpZDIpOwogIH0pOwoKICBpdCgnSUTpl4jngrXilJbngJvmpYPug4HmtpM/LCAoKSA9PiB7CiAgICBjb25zdCBpZCA9IGdlbklkKCk7CiAgICBleHBlY3QodHlwZW9mIGlkKS50b0JlKCdzdHJpbmcnKTsKICAgIGV4cGVjdChpZC5sZW5ndGgpLnRvQmVHcmVhdGVyVGhhbigwKTsKICB9KTsKfSk7CgpkZXNjcmliZSgnZm9ybWF0RHVyYXRpb24nLCAoKSA9PiB7CiAgaXQoJ+mPjeeFjue0oemNluagqO6HoOe7iT8sICgpID0+IHsKICAgIGV4cGVjdChmb3JtYXREdXJhdGlvbigwKSkudG9CZSgnMDA6MDA6MDAnKTsKICAgIGV4cGVjdChmb3JtYXREdXJhdGlvbig1MDAwKSkudG9CZSgnMDA6MDA6MDUnKTsKICAgIGV4cGVjdChmb3JtYXREdXJhdGlvbig2MTAwMCkpLnRvQmUoJzAwOjAxOjAxJyk7CiAgICBleHBlY3QoZm9ybWF0RHVyYXRpb24oMzY2MTAwMCkpLnRvQmUoJzAxOjAxOjAxJyk7CiAgfSk7Cn0pOwoKZGVzY3JpYmUoJ2Zvcm1hdERpc3RhbmNlJywgKCkgPT4gewogIGl0KCfngY/lv47nsKwxa23pj4TliafjgZrnu6s/LCAoKSA9PiB7CiAgICBleHBlY3QoZm9ybWF0RGlzdGFuY2UoMC41KSkudG9NYXRjaCgvXGQrIG0vKTsKICB9KTsKCiAgaXQoJ+a+ttGC57CsMWtt6Y+E5Ymn44Gaa20nLCAoKSA9PiB7CiAgICBleHBlY3QoZm9ybWF0RGlzdGFuY2UoMS41KSkudG9CZSgnMS41MCBrbScpOwogICAgZXhwZWN0KGZvcm1hdERpc3RhbmNlKDEwKSkudG9CZSgnMTAuMDAga20nKTsKICB9KTsKfSk7CgpkZXNjcmliZSgnZm9ybWF0U3BlZWQnLCAoKSA9PiB7CiAgaXQoJ+a3h+a/iOaagOa2k+KCrOa1o+W2heearOmPgT8sICgpID0+IHsKICAgIGV4cGVjdChmb3JtYXRTcGVlZCgxMi4zNCkpLnRvQmUoJzEyLjMga20vaCcpOwogIH0pOwp9KTsKCmRlc2NyaWJlKCdmb3JtYXRBbHQnLCAoKSA9PiB7CiAgaXQoJ251bGwvdW5kZWZpbmVkIOmPhOWJp+OBmuWmr+6Bhea9rCcsICgpID0+IHsKICAgIGV4cGVjdChmb3JtYXRBbHQodW5kZWZpbmVkKSkudG9CZSgn6YilPyk7CiAgICBleHBlY3QoZm9ybWF0QWx0KG51bGwgYXMgYW55KSkudG9CZSgn6YilPyk7CiAgfSk7CgogIGl0KCfpj4Hmnb/igqznhY7mtJPpkbjltoTnsLLpjY8/LCAoKSA9PiB7CiAgICBleHBlY3QoZm9ybWF0QWx0KDEyMzQuNikpLnRvQmUoJzEyMzUgbScpOwogIH0pOwp9KTs=
+import { haversineKm, calcDistance, calcSpeed, calcElevationGain, genId, formatDuration, formatDistance, formatSpeed, formatAlt } from '../src/utils';
+
+describe('haversineKm', () => {
+  it('计算北京-天津距离约100km', () => {
+    const d = haversineKm(39.9042, 116.4074, 39.3434, 117.3616);
+    expect(d).toBeGreaterThan(100);
+    expect(d).toBeLessThan(110);
+  });
+
+  it('同一点距离为0', () => {
+    expect(haversineKm(39.9, 116.4, 39.9, 116.4)).toBe(0);
+  });
+});
+
+describe('calcDistance', () => {
+  it('空数组返回0', () => {
+    expect(calcDistance([])).toBe(0);
+  });
+
+  it('单点返回0', () => {
+    expect(calcDistance([{ lat: 39.9, lng: 116.4, time: 0 }])).toBe(0);
+  });
+
+  it('两北京点距离约100km', () => {
+    const pts = [
+      { lat: 39.9042, lng: 116.4074, time: 0 },
+      { lat: 39.3434, lng: 117.3616, time: 0 },
+    ];
+    const d = calcDistance(pts);
+    expect(d).toBeGreaterThan(100);
+    expect(d).toBeLessThan(110);
+  });
+});
+
+describe('calcSpeed', () => {
+  it('缺少时间返回0', () => {
+    const p1 = { lat: 39.9, lng: 116.4 };
+    const p2 = { lat: 39.9, lng: 116.4 };
+    expect(calcSpeed(p1 as any, p2 as any)).toBe(0);
+  });
+
+  it('正常速度计算', () => {
+    const p1 = { lat: 39.9042, lng: 116.4074, time: 1000000000000 };
+    const p2 = { lat: 39.3434, lng: 117.3616, time: 1000003600000 }; // 3600s = 1小时
+    const s = calcSpeed(p1, p2);
+    expect(s).toBeGreaterThan(100);
+    expect(s).toBeLessThan(110);
+  });
+});
+
+describe('calcElevationGain', () => {
+  it('空数组返回0', () => {
+    expect(calcElevationGain([])).toBe(0);
+  });
+
+  it('上升+下降只计上升', () => {
+    const pts = [
+      { lat: 39.9, lng: 116.4, alt: 100, time: 0 },
+      { lat: 39.9, lng: 116.5, alt: 200, time: 0 },
+      { lat: 39.9, lng: 116.6, alt: 300, time: 0 },
+    ];
+    expect(calcElevationGain(pts)).toBe(200);
+  });
+
+  it('上升后下降保持同样增益', () => {
+    const pts = [
+      { lat: 39.9, lng: 116.4, alt: 100, time: 0 },
+      { lat: 39.9, lng: 116.5, alt: 300, time: 0 },
+      { lat: 39.9, lng: 116.6, alt: 150, time: 0 },
+    ];
+    expect(calcElevationGain(pts)).toBe(200);
+  });
+});
+
+describe('genId', () => {
+  it('两次生成ID不同', () => {
+    const id1 = genId();
+    const id2 = genId();
+    expect(id1).not.toBe(id2);
+  });
+
+  it('ID是字符串且有长度', () => {
+    const id = genId();
+    expect(typeof id).toBe('string');
+    expect(id.length).toBeGreaterThan(0);
+  });
+});
+
+describe('formatDuration', () => {
+  it('零时长', () => {
+    expect(formatDuration(0)).toBe('00:00:00');
+  });
+  it('5秒', () => {
+    expect(formatDuration(5000)).toBe('00:00:05');
+  });
+  it('1分1秒', () => {
+    expect(formatDuration(61000)).toBe('00:01:01');
+  });
+  it('1小时1分1秒', () => {
+    expect(formatDuration(3661000)).toBe('01:01:01');
+  });
+});
+
+describe('formatDistance', () => {
+  it('小于1km显示米', () => {
+    expect(formatDistance(0.5)).toMatch(/\d+ m/);
+  });
+
+  it('大于1km显示公里', () => {
+    expect(formatDistance(1.5)).toBe('1.50 km');
+    expect(formatDistance(10)).toBe('10.00 km');
+  });
+});
+
+describe('formatSpeed', () => {
+  it('速度格式化', () => {
+    expect(formatSpeed(12.34)).toBe('12.3 km/h');
+  });
+});
+
+describe('formatAlt', () => {
+  it('null/undefined显示横杠', () => {
+    expect(formatAlt(undefined)).toBe('—');
+    expect(formatAlt(null as any)).toBe('—');
+  });
+
+  it('海拔四舍五入', () => {
+    expect(formatAlt(1234.6)).toBe('1235 m');
+  });
+});

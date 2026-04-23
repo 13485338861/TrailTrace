@@ -1,1 +1,12 @@
-ewogICJleHRlbmRzIjogIi4vdHNjb25maWcuYXBwLmpzb24iLAogICJjb21waWxlck9wdGlvbnMiOiB7CiAgICAibW9kdWxlIjogImNvbW1vbmpzIiwKICAgICJtb2R1bGVSZXNvbHV0aW9uIjogIm5vZGUiLAogICAgInZlcmJhdGltTW9kdWxlU3ludGF4IjogZmFsc2UsCiAgICAidHlwZXMiOiBbIm5vZGUiLCAiamVzdCJdLAogICAgImpzeCI6ICJyZWFjdC1qc3giLAogICAgIm5vRW1pdCI6IHRydWUKICB9LAogICJpbmNsdWRlIjogWyJzcmMvKiovKiIsICJ0ZXN0cy8qKi8qIl0KfQ==
+{
+  "extends": "./tsconfig.app.json",
+  "compilerOptions": {
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "verbatimModuleSyntax": false,
+    "types": ["node", "jest"],
+    "jsx": "react-jsx",
+    "noEmit": true
+  },
+  "include": ["src/**/*", "tests/**/*"]
+}
