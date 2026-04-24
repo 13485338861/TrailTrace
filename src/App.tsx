@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { MapContainer, TileLayer, Polyline, Marker, useMap } from 'react-leaflet';
+import { MapContainer, Polyline, Marker, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { Geolocation } from '@capacitor/geolocation';
+import CachedTileLayer, { TILE_SOURCES, type TileSource } from './CachedTileLayer';
 import type { Track, TrackPoint, RecordingMode } from './types';
 import { parseGPX, toGPX, downloadFile, readFileText } from './gpx';
 import {
@@ -40,7 +42,13 @@ function LocationWatcher({ latlng, enabled }: { latlng: [number, number] | null;
 // ── Main App ───────────────────────────────────────────────────────────────
 export default function App() {
   const [mode, setMode] = useState<RecordingMode>('idle');
+  const modeRef = useRef<RecordingMode>(mode);
+  modeRef.current = mode;  // always in sync
+  const [tileSource, setTileSource] = useState<TileSource>(TILE_SOURCES[0]);
+  const [offlineMode, setOfflineMode] = useState(false);
   const [trackPoints, setTrackPoints] = useState<TrackPoint[]>([]);
+  const trackPointsRef = useRef<TrackPoint[]>([]);
+  trackPointsRef.current = trackPoints;
   const [currentPos, setCurrentPos] = useState<[number, number] | null>(null);
   const [elapsed, setElapsed] = useState(0); // ms
   const [gpsError, setGpsError] = useState('');
@@ -49,7 +57,7 @@ export default function App() {
   const [historyTracks, setHistoryTracks] = useState<Track[]>([]);
   const [viewedTrack, setViewedTrack] = useState<Track | null>(null);
 
-  const watchId = useRef<number | null>(null);
+  const watchId = useRef<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startTime = useRef<number>(0);
   const pauseOffset = useRef<number>(0);
@@ -59,46 +67,64 @@ export default function App() {
   // Load history on mount
   useEffect(() => { setHistoryTracks(loadTracks()); }, []);
 
-  // GPS watch
-  const startGps = useCallback(() => {
-    if (!navigator.geolocation) {
-      setGpsError('浏览器不支持 GPS');
-      return;
-    }
+  // GPS watch (Capacitor Geolocation plugin)
+  const startGps = useCallback(async () => {
     setGpsError('');
-    watchId.current = navigator.geolocation.watchPosition(
-      (pos) => {
-        const { latitude: lat, longitude: lng, altitude } = pos.coords;
-        setCurrentPos([lat, lng]);
-        if (mode !== 'recording') return;
-        const pt: TrackPoint = {
-          lat, lng,
-          alt: altitude ?? undefined,
-          time: pos.timestamp,
-        };
-        // Sample: 5s interval OR moved > 5m
-        if (!lastPoint.current) {
-          lastPoint.current = pt;
-          setTrackPoints(prev => [...prev, pt]);
+    try {
+      // Request permission first (Capacitor native)
+      const permStatus = await Geolocation.checkPermissions();
+      if (permStatus.location === 'prompt' || permStatus.location === 'prompt-with-rationale') {
+        const req = await Geolocation.requestPermissions();
+        if (req.location === 'denied') {
+          setGpsError('定位权限被拒绝');
           return;
         }
-        const dt = (pt.time! - lastPoint.current.time!) / 1000;
-        const d = calcDistance([lastPoint.current, pt]) * 1000;
-        if (dt >= 5 || d >= 5) {
-          const spd = calcSpeed(lastPoint.current, pt);
-          const newPt: TrackPoint = { ...pt, speed: spd };
-          lastPoint.current = newPt;
-          setTrackPoints(prev => [...prev, newPt]);
+      } else if (permStatus.location === 'denied') {
+        setGpsError('定位权限被拒绝，请在设置中开启');
+        return;
+      }
+
+      const id = await Geolocation.watchPosition(
+        { enableHighAccuracy: true, timeout: 10000 },
+        (pos, err) => {
+          if (err) {
+            setGpsError(`GPS 错误: ${err.message}`);
+            return;
+          }
+          if (!pos) return;
+          const { latitude: lat, longitude: lng, altitude } = pos.coords;
+          setCurrentPos([lat, lng]);
+          if (modeRef.current !== 'recording') return;
+          const pt: TrackPoint = {
+            lat, lng,
+            alt: altitude ?? undefined,
+            time: pos.timestamp,
+          };
+          // Sample: 5s interval OR moved > 5m
+          if (!lastPoint.current) {
+            lastPoint.current = pt;
+            setTrackPoints(prev => [...prev, pt]);
+            return;
+          }
+          const dt = (pt.time! - lastPoint.current.time!) / 1000;
+          const d = calcDistance([lastPoint.current, pt]) * 1000;
+          if (dt >= 5 || d >= 5) {
+            const spd = calcSpeed(lastPoint.current, pt);
+            const newPt: TrackPoint = { ...pt, speed: spd };
+            lastPoint.current = newPt;
+            setTrackPoints(prev => [...prev, newPt]);
+          }
         }
-      },
-      (err) => setGpsError(`GPS 错误: ${err.message}`),
-      { enableHighAccuracy: true, maximumAge: 1000, timeout: 10000 }
-    );
+      );
+      watchId.current = id;
+    } catch (e: any) {
+      setGpsError(`GPS 初始化失败: ${e?.message ?? e}`);
+    }
   }, [mode]);
 
   const stopGps = useCallback(() => {
     if (watchId.current !== null) {
-      navigator.geolocation.clearWatch(watchId.current);
+      Geolocation.clearWatch({ id: watchId.current });
       watchId.current = null;
     }
   }, []);
@@ -146,7 +172,7 @@ export default function App() {
   const handleStop = () => {
     stopGps();
     setMode('idle');
-    const pts = trackPoints;
+    const pts = trackPointsRef.current;
     if (pts.length < 2) { setTrackPoints([]); return; }
     const distance = calcDistance(pts);
     const elevGain = calcElevationGain(pts);
@@ -256,10 +282,7 @@ export default function App() {
         className="map"
         zoomControl={true}
       >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a>'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
+        <CachedTileLayer source={tileSource} offlineMode={offlineMode} />
         {displayTrack && displayTrack.points.length > 0 && (
           <Polyline
             positions={displayTrack.points.map(p => [p.lat, p.lng])}
@@ -276,6 +299,21 @@ export default function App() {
           {mode === 'idle' ? '就绪' : mode === 'recording' ? '● 录制中' : '⏸ 暂停'}
         </span>
         {gpsError && <span className="gps-error">{gpsError}</span>}
+        <div className="tile-switcher">
+          {TILE_SOURCES.map(ts => (
+            <button
+              key={ts.id}
+              className={`tile-btn ${tileSource.id === ts.id ? 'active' : ''}`}
+              onClick={() => setTileSource(ts)}
+              title={ts.name}
+            >{ts.name}</button>
+          ))}
+          <button
+            className={`tile-btn ${offlineMode ? 'active' : ''}`}
+            onClick={() => setOfflineMode(v => !v)}
+            title="离线模式"
+          >📡</button>
+        </div>
       </div>
 
       {/* Stats panel */}
@@ -319,11 +357,11 @@ export default function App() {
         </button>
         <button
           className="btn-icon"
-          onClick={() => {
-            navigator.geolocation?.getCurrentPosition(
-              p => setCurrentPos([p.coords.latitude, p.coords.longitude]),
-              () => {}
-            );
+          onClick={async () => {
+            try {
+              const p = await Geolocation.getCurrentPosition({ enableHighAccuracy: true });
+              setCurrentPos([p.coords.latitude, p.coords.longitude]);
+            } catch {}
           }}
           title="定位"
         >

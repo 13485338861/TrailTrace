@@ -1,5 +1,13 @@
 {
   "appId": "com.trailtrace.app",
   "appName": "TrailTrace",
-  "webDir": "dist"
+  "webDir": "dist",
+  "server": {
+    "allowNavigation": [
+      "*"
+    ]
+  },
+  "android": {
+    "allowMixedContent": true
+  }
 }

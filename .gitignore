@@ -3,7 +3,6 @@ logs
 *.log
 npm-debug.log*
 yarn-debug.log*
-yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
@@ -22,3 +21,12 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Android
+android/.gradle
+android/build
+android/app/build
+android/capacitor.build
+android/app/src/main/assets/public
+*.dex
+*.class
