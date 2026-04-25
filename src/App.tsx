@@ -1,16 +1,18 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { MapContainer, Polyline, Marker, useMap } from 'react-leaflet';
+import { MapContainer, Polyline, Marker } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Geolocation } from '@capacitor/geolocation';
+import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import CachedTileLayer, { TILE_SOURCES, type TileSource } from './CachedTileLayer';
 import type { Track, TrackPoint, RecordingMode } from './types';
 import { parseGPX, toGPX, downloadFile, readFileText } from './gpx';
 import {
   calcDistance, calcSpeed, calcElevationGain,
   genId, formatDuration, formatDistance, formatSpeed, formatAlt,
-  loadTracks, saveTracks,
+  loadTracks, saveTracks, wgs84ToGcj02,
 } from './utils';
+import { getCacheStats, clearTileCache, formatCacheSize, prefetchTiles } from './tileCache';
 
 // Leaflet icon fix for Vite
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
@@ -28,16 +30,7 @@ const locIcon = new L.DivIcon({
   iconAnchor: [8, 8],
 });
 
-// ── Auto-follow current location ──────────────────────────────────────────
-function LocationWatcher({ latlng, enabled }: { latlng: [number, number] | null; enabled: boolean }) {
-  const map = useMap();
-  useEffect(() => {
-    if (enabled && latlng) {
-      map.flyTo(latlng, 17, { animate: true, duration: 1 });
-    }
-  }, [latlng, enabled, map]);
-  return null;
-}
+// useMap() removed — using mapRef instead (react-leaflet v5 context issue in Capacitor WebView)
 
 // ── Main App ───────────────────────────────────────────────────────────────
 export default function App() {
@@ -56,6 +49,11 @@ export default function App() {
   const [showHistory, setShowHistory] = useState(false);
   const [historyTracks, setHistoryTracks] = useState<Track[]>([]);
   const [viewedTrack, setViewedTrack] = useState<Track | null>(null);
+  const [showSettings, setShowSettings] = useState(false);
+  const [showDownload, setShowDownload] = useState(false);
+  const [downloadZooms, setDownloadZooms] = useState<number[]>([12, 13, 14, 15, 16]);
+  const [downloadProgress, setDownloadProgress] = useState<{ done: number; total: number; failed: number } | null>(null);
+  const [cacheStats, setCacheStats] = useState<{ count: number; sizeBytes: number }>({ count: 0, sizeBytes: 0 });
 
   const watchId = useRef<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -63,6 +61,53 @@ export default function App() {
   const pauseOffset = useRef<number>(0);
   const lastPoint = useRef<TrackPoint | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const logFileRef = useRef<string | null>(null);
+  const mapRef = useRef<L.Map | null>(null);
+
+  // App init: fetch initial location and center map
+  useEffect(() => {
+    (async () => {
+      try {
+        const permStatus = await Geolocation.checkPermissions();
+        if (permStatus.location === 'prompt' || permStatus.location === 'prompt-with-rationale') {
+          const req = await Geolocation.requestPermissions();
+          if (req.location !== 'granted') return;
+        } else if (permStatus.location === 'denied') {
+          return;
+        }
+        const p = await Geolocation.getCurrentPosition({ enableHighAccuracy: true });
+        const pos: [number, number] = [p.coords.latitude, p.coords.longitude];
+        setCurrentPos(pos);
+        if (mapRef.current) {
+          const dp = tileSource.crs === 'gcj02' ? wgs84ToGcj02(pos[0], pos[1]) : pos;
+          mapRef.current.setView(dp, 17);
+        }
+      } catch { /* ignore */ }
+    })();
+  }, []);
+
+  // Fly to current position during recording
+  useEffect(() => {
+    if (mode === 'recording' && currentPos && mapRef.current) {
+      const dp = tileSource.crs === 'gcj02' ? wgs84ToGcj02(currentPos[0], currentPos[1]) : currentPos;
+      mapRef.current.setView(dp, 17);
+    }
+  }, [currentPos, mode, tileSource.crs]);
+
+  // Write a log line to file
+  const writeLog = async (line: string) => {
+    try {
+      const ts = new Date().toLocaleString('zh-CN');
+      const entry = `[${ts}] ${line}\n`;
+      if (!logFileRef.current) {
+        const name = `gps_log_${Date.now()}.txt`;
+        await Filesystem.writeFile({ path: name, data: entry, directory: Directory.Documents, encoding: Encoding.UTF8 });
+        logFileRef.current = name;
+      } else {
+        await Filesystem.appendFile({ path: logFileRef.current, data: entry, directory: Directory.Documents, encoding: Encoding.UTF8 });
+      }
+    } catch {}
+  };
 
   // Load history on mount
   useEffect(() => { setHistoryTracks(loadTracks()); }, []);
@@ -104,6 +149,7 @@ export default function App() {
           if (!lastPoint.current) {
             lastPoint.current = pt;
             setTrackPoints(prev => [...prev, pt]);
+            writeLog(`${pt.lat},${pt.lng},${pt.alt ?? ''},0`);
             return;
           }
           const dt = (pt.time! - lastPoint.current.time!) / 1000;
@@ -113,6 +159,7 @@ export default function App() {
             const newPt: TrackPoint = { ...pt, speed: spd };
             lastPoint.current = newPt;
             setTrackPoints(prev => [...prev, newPt]);
+            writeLog(`${pt.lat},${pt.lng},${pt.alt ?? ''},${spd.toFixed(2)}`);
           }
         }
       );
@@ -141,19 +188,32 @@ export default function App() {
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [mode]);
 
+  // Reset log file on new recording
+  const resetLog = async () => {
+    try {
+      const name = `gps_log_${Date.now()}.txt`;
+      const header = `timestamp,lat,lng,alt,speed,accuracy,mode\n`;
+      await Filesystem.writeFile({ path: name, data: header, directory: Directory.Documents, encoding: Encoding.UTF8 });
+      logFileRef.current = name;
+    } catch {}
+  };
+
   // Start recording
-  const handleStart = () => {
+  const handleStart = async () => {
     setTrackPoints([]);
     setElapsed(0);
     pauseOffset.current = 0;
     startTime.current = Date.now();
     lastPoint.current = null;
+    await resetLog();
+    writeLog(`MODE=START lat= lng= alt= speed=0`);
     setMode('recording');
     startGps();
   };
 
   // Pause
   const handlePause = () => {
+    writeLog(`MODE=PAUSE lat= lng= alt= speed=0`);
     setMode('paused');
     pauseOffset.current = elapsed;
     startTime.current = Date.now();
@@ -162,6 +222,7 @@ export default function App() {
 
   // Resume
   const handleResume = () => {
+    writeLog(`MODE=RESUME lat= lng= alt= speed=0`);
     pauseOffset.current = elapsed;
     startTime.current = Date.now();
     setMode('recording');
@@ -171,6 +232,7 @@ export default function App() {
   // Stop & save
   const handleStop = () => {
     stopGps();
+    writeLog(`MODE=STOP lat= lng= alt= speed=0`);
     setMode('idle');
     const pts = trackPointsRef.current;
     if (pts.length < 2) { setTrackPoints([]); return; }
@@ -187,8 +249,8 @@ export default function App() {
       avgSpeed: elapsed > 0 ? distance / (elapsed / 3600000) : 0,
       maxSpeed: Math.max(...pts.map(p => p.speed ?? 0), 0),
       elevationGain: elevGain,
-      maxAlt: alts.length ? Math.max(...alts) : 0,
-      minAlt: alts.length ? Math.min(...alts) : 0,
+      maxAlt: alts.length ? Math.max(...alts) : undefined,
+      minAlt: alts.length ? Math.min(...alts) : undefined,
     };
     const updated = [track, ...tracks].slice(0, 10);
     saveTracks(updated);
@@ -220,8 +282,8 @@ export default function App() {
         avgSpeed: 0,
         maxSpeed: 0,
         elevationGain: elevGain,
-        maxAlt: alts.length ? Math.max(...alts) : 0,
-        minAlt: alts.length ? Math.min(...alts) : 0,
+        maxAlt: alts.length ? Math.max(...alts) : undefined,
+        minAlt: alts.length ? Math.min(...alts) : undefined,
       };
       setViewedTrack(track);
       const updated = [track, ...tracks].slice(0, 10);
@@ -251,12 +313,50 @@ export default function App() {
         avgSpeed: elapsed > 0 ? distance / (elapsed / 3600000) : 0,
         maxSpeed: 0,
         elevationGain: calcElevationGain(pts),
-        maxAlt: 0,
-        minAlt: 0,
+        maxAlt: undefined,
+        minAlt: undefined,
       };
       downloadFile(toGPX(track), `${track.name}.gpx`);
     }
   };
+
+  // Offline map download
+  const handleDownload = async () => {
+    if (!mapRef.current) return;
+    const bounds = mapRef.current.getBounds();
+    const south = bounds.getSouth();
+    const north = bounds.getNorth();
+    const west = bounds.getWest();
+    const east = bounds.getEast();
+    setDownloadProgress({ done: 0, total: 0, failed: 0 });
+    try {
+      const result = await prefetchTiles(
+        tileSource.url, { south, north, east, west }, downloadZooms,
+        (done, total, failed) => setDownloadProgress({ done, total, failed })
+      );
+      setDownloadProgress({ done: result.cached, total: result.total, failed: result.failed });
+      await refreshCacheStats();
+    } catch {
+      setDownloadProgress({ done: 0, total: 0, failed: 0 });
+    }
+  };
+
+  const handleClearCache = async () => {
+    if (confirm('确定清除所有离线地图缓存？')) {
+      await clearTileCache();
+      await refreshCacheStats();
+    }
+  };
+
+  const refreshCacheStats = async () => {
+    try {
+      const stats = await getCacheStats();
+      setCacheStats(stats);
+    } catch { /* ignore */ }
+  };
+
+  // Load cache stats on mount
+  useEffect(() => { refreshCacheStats(); }, []);
 
   // Current stats
   const distance = calcDistance(trackPoints);
@@ -265,10 +365,16 @@ export default function App() {
     : 0;
   const curAlt = trackPoints.length > 0 ? trackPoints[trackPoints.length - 1].alt : undefined;
 
+  // Coordinate conversion: if map uses GCJ-02, convert WGS-84 GPS coords for display
+  const needConvert = tileSource.crs === 'gcj02';
+  const toDisplay = (lat: number, lng: number): [number, number] =>
+    needConvert ? wgs84ToGcj02(lat, lng) : [lat, lng];
+
   // Map center
   const mapCenter: [number, number] = currentPos
-    ?? (trackPoints.length > 0 ? [trackPoints[0].lat, trackPoints[0].lng] : [31.23, 121.47]);
-  const mapZoom = currentPos || trackPoints.length > 0 ? 17 : 13;
+    ? toDisplay(currentPos[0], currentPos[1])
+    : (trackPoints.length > 0 ? toDisplay(trackPoints[0].lat, trackPoints[0].lng) : [31.23, 121.47]);
+  const mapZoom = currentPos != null || trackPoints.length > 0 ? 17 : 13;
 
   // Displayed track
   const displayTrack = viewedTrack ?? (trackPoints.length > 0 ? { points: trackPoints } : null);
@@ -281,16 +387,16 @@ export default function App() {
         zoom={mapZoom}
         className="map"
         zoomControl={true}
+        ref={(map) => { if (map) mapRef.current = map; }}
       >
         <CachedTileLayer source={tileSource} offlineMode={offlineMode} />
         {displayTrack && displayTrack.points.length > 0 && (
           <Polyline
-            positions={displayTrack.points.map(p => [p.lat, p.lng])}
+            positions={displayTrack.points.map(p => toDisplay(p.lat, p.lng))}
             pathOptions={{ color: '#10b981', weight: 4, opacity: 0.85 }}
           />
         )}
-        {currentPos && <Marker position={currentPos} icon={locIcon} />}
-        <LocationWatcher latlng={currentPos} enabled={mode === 'recording'} />
+        {currentPos && <Marker position={toDisplay(currentPos[0], currentPos[1])} icon={locIcon} />}
       </MapContainer>
 
       {/* Status bar */}
@@ -299,20 +405,10 @@ export default function App() {
           {mode === 'idle' ? '就绪' : mode === 'recording' ? '● 录制中' : '⏸ 暂停'}
         </span>
         {gpsError && <span className="gps-error">{gpsError}</span>}
-        <div className="tile-switcher">
-          {TILE_SOURCES.map(ts => (
-            <button
-              key={ts.id}
-              className={`tile-btn ${tileSource.id === ts.id ? 'active' : ''}`}
-              onClick={() => setTileSource(ts)}
-              title={ts.name}
-            >{ts.name}</button>
-          ))}
-          <button
-            className={`tile-btn ${offlineMode ? 'active' : ''}`}
-            onClick={() => setOfflineMode(v => !v)}
-            title="离线模式"
-          >📡</button>
+        <div className="status-right">
+          <span className="tile-label">
+            {tileSource.name}{offlineMode ? ' · 离线' : ''}
+          </span>
         </div>
       </div>
 
@@ -355,13 +451,22 @@ export default function App() {
         <button className="btn-icon" onClick={() => setShowHistory(h => !h)} title="历史轨迹">
           📂
         </button>
+        <button className="btn-icon" onClick={() => setShowDownload(true)} title="下载地图">
+          ⬇
+        </button>
+        <button className="btn-icon" onClick={() => setShowSettings(h => !h)} title="设置">
+          ⚙️
+        </button>
         <button
           className="btn-icon"
           onClick={async () => {
             try {
               const p = await Geolocation.getCurrentPosition({ enableHighAccuracy: true });
-              setCurrentPos([p.coords.latitude, p.coords.longitude]);
-            } catch {}
+              const pos: [number, number] = [p.coords.latitude, p.coords.longitude];
+              setCurrentPos(pos);
+              const dp = tileSource.crs === 'gcj02' ? wgs84ToGcj02(pos[0], pos[1]) : pos;
+              mapRef.current?.setView(dp, 17);
+            } catch { /* ignore */ }
           }}
           title="定位"
         >
@@ -403,6 +508,120 @@ export default function App() {
               <div className="history-meta">{formatDistance(t.distance)} · {formatDuration(t.duration)}</div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Settings drawer */}
+      {showSettings && (
+        <div className="settings-drawer">
+          <div className="history-header">
+            <span>设置</span>
+            <button className="btn-ghost" onClick={() => setShowSettings(false)}>✕</button>
+          </div>
+          <div style={{ padding: '16px' }}>
+            {/* Tile source section */}
+            <div className="settings-section">
+              <div className="settings-section-title">地图源</div>
+              <div className="tile-source-grid">
+                {TILE_SOURCES.map(ts => (
+                  <button
+                    key={ts.id}
+                    className={`tile-source-btn ${tileSource.id === ts.id ? 'active' : ''}`}
+                    onClick={() => setTileSource(ts)}
+                  >
+                    <span className="tile-source-name">{ts.name}</span>
+                    <span className="tile-source-crs">{ts.crs === 'gcj02' ? 'GCJ-02' : 'WGS-84'}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+            {/* Offline mode section */}
+            <div className="settings-section">
+              <div className="settings-section-title">离线模式</div>
+              <div className="toggle-row">
+                <div>
+                  <div style={{ fontSize: '14px' }}>仅使用缓存瓦片</div>
+                  <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '2px' }}>
+                    开启后不从网络加载新瓦片
+                  </div>
+                </div>
+                <button
+                  className={`toggle-switch ${offlineMode ? 'on' : ''}`}
+                  onClick={() => setOfflineMode(v => !v)}
+                >
+                  <div className="toggle-knob" />
+                </button>
+              </div>
+            </div>
+            {/* Cache info */}
+            <div className="settings-section">
+              <div className="settings-section-title">缓存信息</div>
+              <div style={{ fontSize: '13px', color: 'var(--muted)' }}>
+                {cacheStats.count} 张瓦片 · {formatCacheSize(cacheStats.sizeBytes)}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Offline download panel */}
+      {showDownload && (
+        <div className="history-drawer">
+          <div className="history-header">
+            <span>离线地图下载</span>
+            <button className="btn-ghost" onClick={() => setShowDownload(false)}>✕</button>
+          </div>
+          <div style={{ padding: '12px' }}>
+            <div style={{ marginBottom: '12px' }}>
+              <div style={{ fontSize: '12px', color: '#666', marginBottom: '6px' }}>当前区域：地图可视范围</div>
+              <div style={{ fontSize: '14px', color: '#333' }}>瓦片源：{tileSource.name}</div>
+            </div>
+            <div style={{ marginBottom: '12px' }}>
+              <div style={{ fontSize: '12px', color: '#666', marginBottom: '6px' }}>下载缩放级别：</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                {[10, 11, 12, 13, 14, 15, 16, 17, 18].map(z => (
+                  <label key={z} style={{ display: 'flex', alignItems: 'center', gap: '3px', fontSize: '13px' }}>
+                    <input
+                      type="checkbox"
+                      checked={downloadZooms.includes(z)}
+                      onChange={e => {
+                        if (e.target.checked) {
+                          setDownloadZooms(prev => [...prev, z].sort((a, b) => a - b));
+                        } else {
+                          setDownloadZooms(prev => prev.filter(zz => zz !== z));
+                        }
+                      }}
+                    />
+                    z{z}
+                  </label>
+                ))}
+              </div>
+            </div>
+            {downloadProgress && (
+              <div style={{ marginBottom: '12px', padding: '8px', background: '#f5f5f5', borderRadius: '6px', fontSize: '13px' }}>
+                {downloadProgress.total > 0 ? (
+                  <>下载完成: {downloadProgress.done}/{downloadProgress.total} (失败 {downloadProgress.failed})</>
+                ) : (
+                  <>下载中...</>
+                )}
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: '8px', flexDirection: 'column' }}>
+              <button
+                className="btn-primary"
+                onClick={handleDownload}
+                disabled={downloadZooms.length === 0}
+              >
+                {downloadZooms.length === 0 ? '请选择缩放级别' : `下载当前区域 (z${downloadZooms[0]}-z${downloadZooms[downloadZooms.length-1]})`}
+              </button>
+              <button className="btn-ghost" onClick={() => refreshCacheStats()}>
+                缓存: {cacheStats.count} 张瓦片 ({formatCacheSize(cacheStats.sizeBytes)})
+              </button>
+              <button className="btn-danger" onClick={handleClearCache}>
+                清除缓存
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

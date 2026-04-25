@@ -302,6 +302,142 @@ html, body, #root {
   color: var(--muted);
 }
 
+/* ── Settings drawer ── */
+.settings-drawer {
+  position: absolute;
+  top: 0; right: 0;
+  bottom: 0;
+  width: min(320px, 85vw);
+  z-index: 1002;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  box-shadow: -4px 0 24px rgba(0,0,0,0.4);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  animation: slideInRight 0.2s ease-out;
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.settings-section {
+  margin-bottom: 20px;
+}
+
+.settings-section-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 10px;
+}
+
+/* ── Tile source grid ── */
+.tile-source-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tile-source-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.tile-source-btn:hover {
+  border-color: var(--muted);
+  background: var(--surface2);
+}
+
+.tile-source-btn.active {
+  border-color: var(--primary);
+  background: var(--primary-dim);
+}
+
+.tile-source-name {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.tile-source-crs {
+  font-size: 11px;
+  color: var(--muted);
+  background: var(--surface);
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+/* ── Toggle switch ── */
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+}
+
+.toggle-switch {
+  width: 48px;
+  height: 28px;
+  border-radius: 14px;
+  border: none;
+  background: var(--surface2);
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+  transition: background 0.2s;
+  padding: 0;
+}
+
+.toggle-switch.on {
+  background: var(--primary);
+}
+
+.toggle-knob {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: white;
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+.toggle-switch.on .toggle-knob {
+  transform: translateX(20px);
+}
+
+/* ── Status bar right ── */
+.status-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  pointer-events: auto;
+}
+
+.tile-label {
+  font-size: 11px;
+  color: var(--muted);
+  background: rgba(30,41,59,0.8);
+  padding: 3px 8px;
+  border-radius: 10px;
+}
+
 /* ── Leaflet overrides ── */
 .leaflet-control-attribution {
   background: rgba(15,23,42,0.7) !important;
