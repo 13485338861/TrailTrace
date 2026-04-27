@@ -19,8 +19,8 @@ export interface Track {
   avgSpeed: number; // km/h
   maxSpeed: number; // km/h
   elevationGain: number; // m
-  maxAlt: number; // m
-  minAlt: number; // m
+  maxAlt?: number; // m
+  minAlt?: number; // m
 }
 
 export type RecordingMode = 'idle' | 'recording' | 'paused';

@@ -9,16 +9,42 @@ export interface TileSource {
   url: string;
   attribution: string;
   maxZoom: number;
+  crs: 'wgs84' | 'gcj02'; // 地图坐标系
 }
 
-/** 预设瓦片源 */
+/** 预设瓦片源（国内优先） */
 export const TILE_SOURCES: TileSource[] = [
   {
+    id: 'amap',
+    name: '高德街道',
+    url: 'https://wprd0{s}.is.autonavi.com/appmaptile?x={x}&y={y}&z={z}&lang=zh_cn&size=1&scl=1&style=7',
+    attribution: '&copy; 高德地图',
+    maxZoom: 18,
+    crs: 'gcj02',
+  },
+  {
+    id: 'amap-sat',
+    name: '高德卫星',
+    url: 'https://wprd0{s}.is.autonavi.com/appmaptile?x={x}&y={y}&z={z}&lang=zh_cn&size=1&scl=1&style=6',
+    attribution: '&copy; 高德地图',
+    maxZoom: 18,
+    crs: 'gcj02',
+  },
+  {
+    id: 'geoq',
+    name: 'GeoQ彩色',
+    url: 'https://map.geoq.cn/ArcGIS/rest/services/ChinaOnlineCommunity/MapServer/tile/{z}/{y}/{x}',
+    attribution: '&copy; GeoQ',
+    maxZoom: 16,
+    crs: 'gcj02',
+  },
+  {
     id: 'osm',
-    name: '街道图',
+    name: 'OSM街道',
     url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
     attribution: '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a>',
     maxZoom: 19,
+    crs: 'wgs84',
   },
   {
     id: 'topo',
@@ -26,13 +52,7 @@ export const TILE_SOURCES: TileSource[] = [
     url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
     attribution: '&copy; <a href="https://opentopomap.org">OpenTopoMap</a> CC-BY-SA',
     maxZoom: 17,
-  },
-  {
-    id: 'cycl osm',
-    name: '骑行/徒步',
-    url: 'https://{s}.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png',
-    attribution: '&copy; <a href="https://www.cyclosm.org">CyclOSM</a>',
-    maxZoom: 20,
+    crs: 'wgs84',
   },
 ];
 
@@ -136,7 +156,7 @@ export default function CachedTileLayer({
     const layer = new OfflineTileLayer(source.url, {
       attribution: source.attribution,
       maxZoom: source.maxZoom,
-      subdomains: 'abc',
+      subdomains: source.id.startsWith('amap') ? '1234' : 'abc',
     });
     layer.offlineMode = offlineMode;
     layer.addTo(map);
